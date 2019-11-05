@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="example.demo.mapper.BlogMapper">
+
+  <select id="selectBlog" resultType="org.apache.ibatis.example.demo.entity.Blog">
+        select * from Blog where id = #{id}
+    </select>
+
+  <insert id="insertBlog" parameterType="Blog">
+        insert into Blog (id,title) values (#{id},#{title})
+    </insert>
+
+  <update id="updateBlog" parameterType="Blog">
+        UPDATE Blog SET title=#{title} WHERE id=#{id}
+    </update>
+
+  <delete id="deleteBlog" parameterType="integer">
+        DELETE FROM BLOG WHERE id=#{id}
+    </delete>
+
+</mapper>

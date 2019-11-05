@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+  <properties>
+    <property name="jdbc.driver" value="com.mysql.jdbc.Driver" />
+    <property name="jdbc.user" value="root" />
+    <property name="jdbc.pass" value="mysql" />
+    <property name="jdbc.url" value="jdbc:mysql://localhost:3306/example_demo?serverTimezone=GMT" />
+  </properties>
+
+  <settings>
+    <!-- Globally enables or disables any caches configured in any mapper under this configuration -->
+    <setting name="cacheEnabled" value="true"/>
+    <!-- Sets the number of seconds the driver will wait for a response from the database -->
+    <setting name="defaultStatementTimeout" value="3000"/>
+    <!-- Enables automatic mapping from classic database column names A_COLUMN to camel case classic Java property names aColumn -->
+    <setting name="mapUnderscoreToCamelCase" value="true"/>
+    <!-- Allows JDBC support for generated keys. A compatible driver is required.
+    This setting forces generated keys to be used if set to true,
+     as some drivers deny compatibility but still work -->
+    <setting name="useGeneratedKeys" value="true"/>
+  </settings>
+
+  <typeAliases>
+    <package name="org.apache.ibatis.example.demo" />
+  </typeAliases>
+  <!-- Continue going here -->
+  <environments default="dev">
+    <environment id="dev">
+      <transactionManager type="JDBC"></transactionManager>
+      <dataSource type="POOLED">
+        <property name="driver" value="${jdbc.driver}" />
+        <property name="url" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.user}" />
+        <property name="password" value="${jdbc.pass}" />
+      </dataSource>
+    </environment>
+  </environments>
+
+  <mappers>
+    <mapper resource="mapper/BlogMapper.xml" />
+  </mappers>
+
+</configuration>
