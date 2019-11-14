@@ -41,9 +41,15 @@ public class PropertyParser {
    * </p>
    * @since 3.4.2
    */
+  // 如果没有指定, 则用默认值
+  // 否则用指定值
+  // <properties resource="org/mybatis/example/config.properties">
+  //    <property name="org.apache.ibatis.parsing.PropertyParser.default-value-separator" value=";" />
+  // </properties>
   public static final String KEY_DEFAULT_VALUE_SEPARATOR = KEY_PREFIX + "default-value-separator";
 
   private static final String ENABLE_DEFAULT_VALUE = "false";
+  // :号后面的值为默认值
   private static final String DEFAULT_VALUE_SEPARATOR = ":";
 
   private PropertyParser() {
@@ -52,6 +58,8 @@ public class PropertyParser {
 
   public static String parse(String string, Properties variables) {
     VariableTokenHandler handler = new VariableTokenHandler(variables);
+    // 具体的替换逻辑暴露出来，由传入的handler来决定
+    // 通用的遍历解析逻辑由GenericTokenParser实现
     GenericTokenParser parser = new GenericTokenParser("${", "}", handler);
     return parser.parse(string);
   }

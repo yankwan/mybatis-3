@@ -85,13 +85,17 @@ public class Reflector {
   private void addGetMethods(Class<?> clazz) {
     Map<String, List<Method>> conflictingGetters = new HashMap<>();
     Method[] methods = getClassMethods(clazz);
+    // filter 过滤并保留入参为0且方法名是get或is开头的方法
+    // PropertyNamer.methodToProperty() 将方法名转为对应的属性字段名. 如 getName -> name, isDisplay -> display
     Arrays.stream(methods).filter(m -> m.getParameterTypes().length == 0 && PropertyNamer.isGetter(m.getName()))
       .forEach(m -> addMethodConflict(conflictingGetters, PropertyNamer.methodToProperty(m.getName()), m));
+    // 处理冲突的get方法, 因为子类可能覆写父类的get方法
     resolveGetterConflicts(conflictingGetters);
   }
 
   private void resolveGetterConflicts(Map<String, List<Method>> conflictingGetters) {
     for (Entry<String, List<Method>> entry : conflictingGetters.entrySet()) {
+      // winner 最佳匹配的方法
       Method winner = null;
       String propName = entry.getKey();
       boolean isAmbiguous = false;
@@ -100,24 +104,32 @@ public class Reflector {
           winner = candidate;
           continue;
         }
+        // [1] 对比返回类型
         Class<?> winnerType = winner.getReturnType();
         Class<?> candidateType = candidate.getReturnType();
         if (candidateType.equals(winnerType)) {
+          // 类型相同情况
           if (!boolean.class.equals(candidateType)) {
             isAmbiguous = true;
             break;
           } else if (candidate.getName().startsWith("is")) {
+            // 返回值是boolean类型, 优先选择is方法
             winner = candidate;
           }
         } else if (candidateType.isAssignableFrom(winnerType)) {
+          // candidateType是winnerType本身或父类类型
+          // 这时最佳匹配的是winnerType这个子类类型
           // OK getter type is descendant
         } else if (winnerType.isAssignableFrom(candidateType)) {
+          // winnerType是父类类型, 那么最佳匹配是candidateType
           winner = candidate;
         } else {
           isAmbiguous = true;
           break;
         }
       }
+      // isAmbiguous = true
+      // 说明存在不合法的方法重载情况, 抛出异常
       addGetMethod(propName, winner, isAmbiguous);
     }
   }
@@ -142,7 +154,14 @@ public class Reflector {
   }
 
   private void addMethodConflict(Map<String, List<Method>> conflictingMethods, String name, Method method) {
+    // 校验不合法的属性名
     if (isValidPropertyName(name)) {
+      // 等价于以下写法
+      // list = map.get(name)
+      // if (list == null) {
+      //    list = new ArrayList();
+      //    map.put(name, list);
+      // }
       List<Method> list = conflictingMethods.computeIfAbsent(name, k -> new ArrayList<>());
       list.add(method);
     }
@@ -202,10 +221,13 @@ public class Reflector {
 
   private Class<?> typeToClass(Type src) {
     Class<?> result = null;
+    // 普通类型
     if (src instanceof Class) {
       result = (Class<?>) src;
+    // 泛型类型
     } else if (src instanceof ParameterizedType) {
       result = (Class<?>) ((ParameterizedType) src).getRawType();
+    // 泛型数组
     } else if (src instanceof GenericArrayType) {
       Type componentType = ((GenericArrayType) src).getGenericComponentType();
       if (componentType instanceof Class) {
@@ -275,10 +297,13 @@ public class Reflector {
     Map<String, Method> uniqueMethods = new HashMap<>();
     Class<?> currentClass = clazz;
     while (currentClass != null && currentClass != Object.class) {
+      // getDeclaredMethods() 返回当前类及其父类或父接口声明的所有公有方法
+      // getMehtods() 返回当前类的所有方法
       addUniqueMethods(uniqueMethods, currentClass.getDeclaredMethods());
 
       // we also need to look for interface methods -
       // because the class may be abstract
+      // 对于抽象方法，还需要找它对应的接口方法
       Class<?>[] interfaces = currentClass.getInterfaces();
       for (Class<?> anInterface : interfaces) {
         addUniqueMethods(uniqueMethods, anInterface.getMethods());

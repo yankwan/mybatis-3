@@ -64,6 +64,7 @@ public class PropertyTokenizer implements Iterator<PropertyTokenizer> {
     return children != null;
   }
 
+  // 通过迭代获取下一个PropertyTokenizer对象
   @Override
   public PropertyTokenizer next() {
     return new PropertyTokenizer(children);

@@ -31,7 +31,8 @@
             </transactionManager>
             <dataSource type="UNPOOLED">
                 <property name="driver" value="org.hsqldb.jdbcDriver"/>
-                <property name="url" value="jdbc:hsqldb:mem:automapping"/>
+<!--                <property name="url" value="jdbc:hsqldb:mem:automapping"/>-->
+                <property name="url" value="jdbc:hsqldb:file:E:/hsqldb/data/automapping"/>
                 <property name="username" value="sa"/>
             </dataSource>
         </environment>
