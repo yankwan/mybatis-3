@@ -40,6 +40,7 @@ public class UnpooledDataSource implements DataSource {
 
   private ClassLoader driverClassLoader;
   private Properties driverProperties;
+  // <Driver类名, Driver对象>
   private static Map<String, Driver> registeredDrivers = new ConcurrentHashMap<>();
 
   private String driver;
@@ -216,18 +217,25 @@ public class UnpooledDataSource implements DataSource {
     return doGetConnection(props);
   }
 
+  // 执行数据库连接
   private Connection doGetConnection(Properties properties) throws SQLException {
+    // 1. driver初始化
     initializeDriver();
+    // 2. 获取连接 conn
     Connection connection = DriverManager.getConnection(url, properties);
+    // 3. 配置连接conn信息
     configureConnection(connection);
     return connection;
   }
 
+  // 同步方法
   private synchronized void initializeDriver() throws SQLException {
+    // registeredDrivers 中还没有指定的driver
     if (!registeredDrivers.containsKey(driver)) {
       Class<?> driverType;
       try {
         if (driverClassLoader != null) {
+          // eg: Class.forName("com.mysql.jdbc.Driver", ....);
           driverType = Class.forName(driver, true, driverClassLoader);
         } else {
           driverType = Resources.classForName(driver);
@@ -255,6 +263,7 @@ public class UnpooledDataSource implements DataSource {
     }
   }
 
+  // 典型的代理模式使用
   private static class DriverProxy implements Driver {
     private Driver driver;
 
@@ -292,6 +301,9 @@ public class UnpooledDataSource implements DataSource {
       return this.driver.jdbcCompliant();
     }
 
+    // 使用代理类
+    // 主要重写日志方法, 使用mybatis自定义的Logger对象
+    // 其他情况使用当前driver本身的方法
     @Override
     public Logger getParentLogger() {
       return Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);

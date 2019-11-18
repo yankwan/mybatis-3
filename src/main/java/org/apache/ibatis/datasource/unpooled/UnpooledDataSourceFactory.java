@@ -50,12 +50,14 @@ public class UnpooledDataSourceFactory implements DataSourceFactory {
       } else if (metaDataSource.hasSetter(propertyName)) {
         String value = (String) properties.get(propertyName);
         Object convertedValue = convertValue(metaDataSource, propertyName, value);
+        // 初始化设置datasource中的属性
         metaDataSource.setValue(propertyName, convertedValue);
       } else {
         throw new DataSourceException("Unknown DataSource property: " + propertyName);
       }
     }
     if (driverProperties.size() > 0) {
+      // 初始化设置datasource中的driverProperties属性
       metaDataSource.setValue("driverProperties", driverProperties);
     }
   }
@@ -66,6 +68,9 @@ public class UnpooledDataSourceFactory implements DataSourceFactory {
   }
 
   private Object convertValue(MetaObject metaDataSource, String propertyName, String value) {
+    // 对字符串的值进行转换, 根据metaDataSource中的属性类型, 转换为对应的类型值
+    // 使用metaDataSource封装DataSource类的原因之一
+    // 方便获取对应属性的类型和做转换
     Object convertedValue = value;
     Class<?> targetType = metaDataSource.getSetterType(propertyName);
     if (targetType == Integer.class || targetType == int.class) {
