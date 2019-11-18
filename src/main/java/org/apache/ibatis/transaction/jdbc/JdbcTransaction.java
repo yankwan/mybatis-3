@@ -41,8 +41,8 @@ public class JdbcTransaction implements Transaction {
 
   protected Connection connection;
   protected DataSource dataSource;
-  protected TransactionIsolationLevel level;
-  protected boolean autoCommit;
+  protected TransactionIsolationLevel level;  // 事务隔离级别
+  protected boolean autoCommit;               // 是否自动提交
 
   public JdbcTransaction(DataSource ds, TransactionIsolationLevel desiredLevel, boolean desiredAutoCommit) {
     dataSource = ds;

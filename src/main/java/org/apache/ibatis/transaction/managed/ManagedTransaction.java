@@ -62,6 +62,8 @@ public class ManagedTransaction implements Transaction {
     return this.connection;
   }
 
+  // commit()和rollback()是空方法
+  // 事务的管理交给容器管理
   @Override
   public void commit() throws SQLException {
     // Does nothing
