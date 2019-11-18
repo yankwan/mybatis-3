@@ -54,6 +54,8 @@ class PooledConnection implements InvocationHandler {
     this.createdTimestamp = System.currentTimeMillis();
     this.lastUsedTimestamp = System.currentTimeMillis();
     this.valid = true;
+    // 创建代理的conn对象
+    // 对proxyConnection的所有方法调用都将委托给PooledConnection.invoke(...)方法
     this.proxyConnection = (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(), IFACES, this);
   }
 
@@ -237,6 +239,7 @@ class PooledConnection implements InvocationHandler {
       return null;
     }
     try {
+      // 判断如果不是Object的方法
       if (!Object.class.equals(method.getDeclaringClass())) {
         // issue #579 toString() should never fail
         // throw an SQLException instead of a Runtime
