@@ -26,13 +26,16 @@ import org.apache.ibatis.cache.Cache;
  * Weak Reference cache decorator.
  * Thanks to Dr. Heinz Kabutz for his guidance here.
  *
+ * 弱引用缓存类，缓存键对应的缓存值为弱引用类型
+ * 当只存在弱引用时, 发生GC时会回收弱引用的对象
+ *
  * @author Clinton Begin
  */
 public class WeakCache implements Cache {
-  private final Deque<Object> hardLinksToAvoidGarbageCollection;
-  private final ReferenceQueue<Object> queueOfGarbageCollectedEntries;
+  private final Deque<Object> hardLinksToAvoidGarbageCollection;              // 强引用队列
+  private final ReferenceQueue<Object> queueOfGarbageCollectedEntries;        // 被弱引用的对象被GC回收, 包裹改对象的WeakEntry存放在该队列中
   private final Cache delegate;
-  private int numberOfHardLinks;
+  private int numberOfHardLinks;                                              // 强引用队列大小
 
   public WeakCache(Cache delegate) {
     this.delegate = delegate;
@@ -59,6 +62,7 @@ public class WeakCache implements Cache {
   @Override
   public void putObject(Object key, Object value) {
     removeGarbageCollectedItems();
+    // 添加缓存的时候, 对应的值是WeakEntry对象
     delegate.putObject(key, new WeakEntry(key, value, queueOfGarbageCollectedEntries));
   }
 
@@ -70,8 +74,10 @@ public class WeakCache implements Cache {
     if (weakReference != null) {
       result = weakReference.get();
       if (result == null) {
+        // result为空, 说明已被GC回收了
         delegate.removeObject(key);
       } else {
+        // result非空, 添加到强引用队列避免被GC
         hardLinksToAvoidGarbageCollection.addFirst(result);
         if (hardLinksToAvoidGarbageCollection.size() > numberOfHardLinks) {
           hardLinksToAvoidGarbageCollection.removeLast();
@@ -96,11 +102,18 @@ public class WeakCache implements Cache {
 
   private void removeGarbageCollectedItems() {
     WeakEntry sv;
+    // 循环将队列中已被GC回收的对象的Key值删除
     while ((sv = (WeakEntry) queueOfGarbageCollectedEntries.poll()) != null) {
+      // 因为Map的值是弱引用对象, 直接被GC回收的
+      // 而对应的Key值还存在, 需要手动删对应的key值
       delegate.removeObject(sv.key);
     }
   }
 
+  /**
+   * WeakEntry继承WeakReference弱引用类
+   * 扩展一个键值key
+   */
   private static class WeakEntry extends WeakReference<Object> {
     private final Object key;
 
