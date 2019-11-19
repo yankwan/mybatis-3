@@ -28,15 +28,24 @@ public final class LogFactory {
    */
   public static final String MARKER = "MYBATIS";
 
+  // 选择使用的log构造方法
   private static Constructor<? extends Log> logConstructor;
 
+
+  // 传入tryImplementation方法为Lambda表达式, 等价与以下写法
+  // tryImplementation( new Runnable() {
+  //      @override
+  //      public void run() {
+  //          setImplementation(org.apache.ibatis.logging.slf4j.Slf4jImpl.class);
+  //      }
+  // })
   static {
-    tryImplementation(LogFactory::useSlf4jLogging);
-    tryImplementation(LogFactory::useCommonsLogging);
-    tryImplementation(LogFactory::useLog4J2Logging);
-    tryImplementation(LogFactory::useLog4JLogging);
-    tryImplementation(LogFactory::useJdkLogging);
-    tryImplementation(LogFactory::useNoLogging);
+    tryImplementation(LogFactory::useSlf4jLogging);       // 使用Slf4jLogging
+    tryImplementation(LogFactory::useCommonsLogging);     // 使用CommonsLogging
+    tryImplementation(LogFactory::useLog4J2Logging);      // 使用Log4J2Logging
+    tryImplementation(LogFactory::useLog4JLogging);       // 使用Log4JLogging
+    tryImplementation(LogFactory::useJdkLogging);         // 使用JdkLogging
+    tryImplementation(LogFactory::useNoLogging);          // 使用NoLogging
   }
 
   private LogFactory() {
@@ -97,13 +106,17 @@ public final class LogFactory {
     }
   }
 
+  // 入参为实现Log接口的子类
   private static void setImplementation(Class<? extends Log> implClass) {
     try {
+      // 获取参数为String的构造方法
       Constructor<? extends Log> candidate = implClass.getConstructor(String.class);
+      // 创建log对象
       Log log = candidate.newInstance(LogFactory.class.getName());
       if (log.isDebugEnabled()) {
         log.debug("Logging initialized using '" + implClass + "' adapter.");
       }
+      // 创建成功后将构造方法赋值给logConstructor
       logConstructor = candidate;
     } catch (Throwable t) {
       throw new LogException("Error setting Log implementation.  Cause: " + t, t);

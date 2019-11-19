@@ -139,6 +139,7 @@ public class ClassLoaderWrapper {
 
     URL url;
 
+    // 遍历所有classLoader数组
     for (ClassLoader cl : classLoader) {
 
       if (null != cl) {
@@ -149,11 +150,14 @@ public class ClassLoaderWrapper {
         // ...but some class loaders want this leading "/", so we'll add it
         // and try again if we didn't find the resource
         if (null == url) {
+          // 如果找不到
+          // 加上前缀 / 再查一遍
           url = cl.getResource("/" + resource);
         }
 
         // "It's always in the last place I look for it!"
         // ... because only an idiot would keep looking for it after finding it, so stop looking already.
+        // 找到了就直接返回
         if (null != url) {
           return url;
         }
