@@ -27,6 +27,7 @@ import org.apache.ibatis.cache.CacheException;
  * Simple blocking decorator
  *
  * Simple and inefficient version of EhCache's BlockingCache decorator.
+ * 当通过键值没有找到对应缓存的时候进行加锁操作, 阻塞后续线程获取该缓存（当线程找不到时一般会直接添加，避免后续线程在没有值得时候重复获取）
  * It sets a lock over a cache key when the element is not found in cache.
  * This way, other threads will wait until this element is filled instead of hitting the database.
  *
@@ -35,7 +36,7 @@ import org.apache.ibatis.cache.CacheException;
  */
 public class BlockingCache implements Cache {
 
-  private long timeout;
+  private long timeout;           // 阻塞等待超时时间
   private final Cache delegate;
   private final ConcurrentHashMap<Object, ReentrantLock> locks;
 
@@ -59,17 +60,23 @@ public class BlockingCache implements Cache {
     try {
       delegate.putObject(key, value);
     } finally {
+      // 添加完缓存释放锁
       releaseLock(key);
     }
   }
 
   @Override
   public Object getObject(Object key) {
+    // <1.1> 获取锁
     acquireLock(key);
+    // <1.2> 获取缓存
     Object value = delegate.getObject(key);
     if (value != null) {
+      // <1.3> 释放锁 取得缓存结果后要释放锁, 否则其他线程无法获取该键值Key的值
       releaseLock(key);
     }
+    // 若value==null, 说明没有对应的缓存结果, 此时线程还持有该锁
+    // 在putObject方法中, 添加缓存后再释放该锁
     return value;
   }
 
@@ -91,8 +98,11 @@ public class BlockingCache implements Cache {
 
   private void acquireLock(Object key) {
     Lock lock = getLockForKey(key);
+    // 有设置超时时间
     if (timeout > 0) {
       try {
+        // 尝试获取锁直到timeout超时
+        // lock.tryLock() 不带参数方法, 获取不到锁则直接返回
         boolean acquired = lock.tryLock(timeout, TimeUnit.MILLISECONDS);
         if (!acquired) {
           throw new CacheException("Couldn't get a lock in " + timeout + " for the key " +  key + " at the cache " + delegate.getId());
@@ -101,6 +111,7 @@ public class BlockingCache implements Cache {
         throw new CacheException("Got interrupted while trying to acquire lock for key " + key, e);
       }
     } else {
+      // 若没有指定timeout, 则调用lock()方法休眠等待直到可以获取锁
       lock.lock();
     }
   }
