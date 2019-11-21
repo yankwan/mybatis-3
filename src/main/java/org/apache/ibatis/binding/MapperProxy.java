@@ -48,6 +48,7 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     this.methodCache = methodCache;
   }
 
+  // 为了处理接口default方法???
   static {
     Method privateLookupIn;
     try {
@@ -78,8 +79,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
     try {
       if (Object.class.equals(method.getDeclaringClass())) {
+        // 不额外处理Objeco类本身的方法, 直接调用
         return method.invoke(this, args);
       } else if (method.isDefault()) {
+        // 处理Java8,9的接口中的default方法
         if (privateLookupInMethod == null) {
           return invokeDefaultMethodJava8(proxy, method, args);
         } else {
@@ -89,7 +92,9 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     } catch (Throwable t) {
       throw ExceptionUtil.unwrapThrowable(t);
     }
+    // 获取并缓存Mapper接口中的method
     final MapperMethod mapperMethod = cachedMapperMethod(method);
+    // 执行mapperMethod方法
     return mapperMethod.execute(sqlSession, args);
   }
 
